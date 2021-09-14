@@ -1,0 +1,9 @@
+{
+  "title": "Ms",
+  "names": {
+    "first": "Dolores"
+  },
+  "!auth/roles": [
+    "viewer"
+  ]
+}

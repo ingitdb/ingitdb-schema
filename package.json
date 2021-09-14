@@ -1,0 +1,6 @@
+{
+  "name": "@ingitdb/schema",
+  "devDependencies": {
+    "typescript": "^4.4.3"
+  }
+}

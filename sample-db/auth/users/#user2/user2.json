@@ -1,0 +1,9 @@
+{
+  "names": {
+    "first": "John",
+    "last": "Doe"
+  },
+  "!auth/roles": [
+    "viewer"
+  ]
+}

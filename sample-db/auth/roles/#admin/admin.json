@@ -1,0 +1,6 @@
+{
+  "description": "Full access",
+  "!auth/users": [
+    "user1"
+  ]
+}

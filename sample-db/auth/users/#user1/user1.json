@@ -1,0 +1,10 @@
+{
+  "title": "Mr",
+  "names": {
+    "first": "Jack",
+    "last": "Johns"
+  },
+  "!auth/roles": [
+    "admin"
+  ]
+}

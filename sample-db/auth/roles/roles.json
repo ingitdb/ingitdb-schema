@@ -1,0 +1,11 @@
+{
+  "admin": {
+    "description": "Full access"
+  },
+  "editor": {
+    "description": "Can edit"
+  },
+  "viewer": {
+    "description": "Read only access"
+  }
+}

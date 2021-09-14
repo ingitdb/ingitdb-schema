@@ -1,0 +1,7 @@
+{
+  "description": "Read only access",
+  "!auth/users": [
+    "user2",
+    "user3"
+  ]
+}

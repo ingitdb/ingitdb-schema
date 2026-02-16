@@ -1,5 +1,8 @@
 {
-  "manyToManyWith": [
-    "auth/users"
-  ]
+  "min": 1,
+  "manyToManyWith": {
+    "auth/users": {
+      "min": 0
+    }
+  }
 }

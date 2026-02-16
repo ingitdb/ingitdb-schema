@@ -1,0 +1,8 @@
+{
+  "manyToManyWith": {
+    "auth/roles": {
+      "min": 1,
+      "max": 2
+    }
+  }
+}

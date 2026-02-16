@@ -1,0 +1,5 @@
+{
+  "manyToManyWith": [
+    "auth/users"
+  ]
+}

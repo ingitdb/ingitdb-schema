@@ -16,6 +16,12 @@
     "record_file": {
       "$ref": "#/$defs/RecordFileDef"
     },
+    "cache_control": {
+      "type": "string",
+      "description": "Optional HTTP Cache-Control directive string (RFC 9111) telling readers how long this collection's files may be cached. Overrides the database-level cache_control in .ingitdb/settings.yaml. A declared value may tighten the origin's header, and relax it only when the read is pinned to a commit SHA. Example: 'public, max-age=31536000, immutable'.",
+      "minLength": 1,
+      "examples": ["public, max-age=31536000, immutable", "no-store"]
+    },
     "data_dir": {
       "type": "string",
       "description": "Optional relative path to the directory containing the collection's data files."

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ingitdb/ingitdb/schemas/ingitdb-root-collections.schema.json",
+  "title": "inGitDB Root Collections",
+  "description": "Schema for `.ingitdb/root-collections.yaml`: a flat map (no wrapper key) from root collection id to the collection directory, relative to the database root.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "string",
+    "minLength": 1,
+    "description": "Relative path to the collection directory. A key ending in `.*` imports the root collections of another database at that path under a namespace."
+  },
+  "examples": [
+    {
+      "tasks.backlog": "data/tasks/backlog",
+      "countries": "countries"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ingitdb/ingitdb/schemas/ingitdb-settings.schema.json",
+  "title": "inGitDB Database Settings",
+  "description": "Schema for `.ingitdb/settings.yaml`. Unknown keys are rejected by inGitDB.",
+  "type": "object",
+  "properties": {
+    "default_namespace": {
+      "type": "string",
+      "description": "Collection id prefix used when this database is opened directly (e.g. `todo` makes `tasks` become `todo.tasks`)."
+    },
+    "default_record_format": {
+      "type": "string",
+      "enum": [
+        "yaml",
+        "yml",
+        "json",
+        "markdown",
+        "toml",
+        "ingr",
+        "csv",
+        "jsonl"
+      ],
+      "description": "Record format used when a collection's `record_file.format` is empty."
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Languages of the database; `required` ones must be present in localized values."
+    },
+    "cache_control": {
+      "type": "string",
+      "minLength": 1,
+      "description": "HTTP Cache-Control directive (RFC 9111) for every collection's files unless a collection declares its own."
+    }
+  },
+  "additionalProperties": false
+}

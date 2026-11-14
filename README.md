@@ -98,9 +98,11 @@ Unknown keys are rejected by inGitDB, and by this schema.
 | `format`        | `string`            | No       | Free-form content hint (markdown, html, uri, ...); not validated.                                                                              |
 | `formula`       | `string`            | No       | Starlark expression of a computed column (never stored).                                                                                       |
 
-The column named `$ID` describes the record key. Typed `int`, `float`, `bool`, `date` (`YYYY-MM-DD`),
-`time` (`H:MM` or `HH:MM:SS`) or `datetime` (`YYYY-MM-DDTHH:MM:SS`, optional zone), every record key
-must parse as that type.
+The column named `$ID` describes the record key. Typed `int` (no `+`, no leading zeros), `float`
+(shortest decimal form: `1.5`, not `1.50` or `1e+06`), `bool`, `date` (`YYYY-MM-DD`), `time`
+(`H:MM` or `H:MM:SS`, optional fractional seconds) or `datetime` (`YYYY-MM-DDTHH:MM:SS`, optional
+fractional seconds and zone; RFC 3339 is a subset), every record key must parse as that type. The
+JSON Schema cannot check this; `ingitdb validate` does. Ordinary temporal columns accept any text.
 
 ## Usage
 

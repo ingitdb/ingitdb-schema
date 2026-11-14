@@ -155,6 +155,14 @@
             "map[$record_id]map[$field_name]any": "Dictionary of records — multiple records stored in a single file as a map keyed by record id."
           }
         },
+        "key_encoding": {
+          "type": "string",
+          "title": "Record Key Encoding",
+          "description": "How a record key becomes a file or directory name and back. Omitted or 'none': the name is the key as it is. 'tilde-v1': the bytes A-Z a-z 0-9 - _ . @ + = , are kept; every other byte, '~' included, is written as '~' and two upper-case hex digits; a leading or trailing '.' and the first byte of a Windows device name (CON, PRN, AUX, NUL, COM0-9, LPT0-9) are written that way too. Readers show the decoded key. With one record per file, a key whose file name would exceed 255 bytes is an error. See the ingitdb-go spec record-key-encoding.",
+          "enum": ["none", "tilde-v1"],
+          "default": "none",
+          "examples": ["tilde-v1"]
+        },
         "records_dir": {
           "type": "string",
           "minLength": 1,

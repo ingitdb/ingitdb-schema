@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/ingitdb/ingitdb/schemas/ingitdb-root-config.schema.json",
   "title": "inGitDB Root Config",
-  "description": "Schema for the .ingitdb.yaml root configuration file that defines the root-level collections of an inGitDB database.",
+  "description": "Schema for the single `.ingitdb.yaml` file of the older inGitDB layout. The current reader does not read this file: it reads `.ingitdb/root-collections.yaml` (see ingitdb-root-collections.schema.json) and `.ingitdb/settings.yaml` (see ingitdb-settings.schema.json). Kept so existing references keep resolving.",
   "type": "object",
   "properties": {
     "rootCollections": {
@@ -16,5 +16,6 @@
       "minProperties": 1
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "deprecated": true
 }

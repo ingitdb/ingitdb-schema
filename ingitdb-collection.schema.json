@@ -2,10 +2,17 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/ingitdb/ingitdb/schemas/ingitdb-collection.schema.json",
   "title": "inGitDB Collection Definition",
-  "description": "Schema for the .ingitdb-collection.yaml file that defines an inGitDB collection, including its columns, record file format, and optional views.",
+  "description": "Schema for a collection definition file, `.collection/definition.yaml` inside a collection directory (or `.collections/<name>/definition.yaml` in the shared layout). A subcollection uses the same format at `.collection/subcollections/<sub>/definition.yaml`. Unknown keys are rejected by inGitDB, so this schema does not allow additional properties.",
   "type": "object",
-  "required": ["columns", "record_file"],
+  "required": [
+    "columns",
+    "record_file"
+  ],
   "properties": {
+    "inherits": {
+      "type": "string",
+      "description": "Path of a partial base definition to overlay under this one, relative to the directory of this file. Columns merge by name (this definition wins); other fields fill in where this one leaves them unset."
+    },
     "titles": {
       "type": "object",
       "description": "Localized titles for the collection, keyed by locale code (e.g. 'en', 'de', 'fr').",
@@ -15,12 +22,6 @@
     },
     "record_file": {
       "$ref": "#/$defs/RecordFileDef"
-    },
-    "cache_control": {
-      "type": "string",
-      "description": "Optional HTTP Cache-Control directive string (RFC 9111) telling readers how long this collection's files may be cached. Overrides the database-level cache_control in .ingitdb/settings.yaml. A declared value may tighten the origin's header, and relax it only when the read is pinned to a commit SHA. Example: 'public, max-age=31536000, immutable'.",
-      "minLength": 1,
-      "examples": ["public, max-age=31536000, immutable", "no-store"]
     },
     "data_dir": {
       "type": "string",
@@ -42,9 +43,64 @@
       },
       "uniqueItems": true
     },
+    "primary_key": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Column names composing the source primary key, in declared order. Written by importers; readers fall back to `$key` when empty."
+    },
+    "source_schema": {
+      "type": "object",
+      "description": "The relational schema of an imported collection (fields, indexes, foreign keys). Descriptive, not a write constraint. Written by importers."
+    },
     "default_view": {
+      "$ref": "#/$defs/ViewDef",
+      "description": "The default view of the collection, declared inline."
+    },
+    "readme": {
+      "type": "object",
+      "description": "Controls the generated collection README.",
+      "properties": {
+        "hide_columns": {
+          "type": "boolean"
+        },
+        "hide_subcollections": {
+          "type": "boolean"
+        },
+        "hide_views": {
+          "type": "boolean"
+        },
+        "hide_triggers": {
+          "type": "boolean"
+        },
+        "data_preview": {
+          "$ref": "#/$defs/ViewDef"
+        }
+      },
+      "additionalProperties": false
+    },
+    "min_records_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The collection must hold at least this many records. For a subcollection it applies to each parent record's instance."
+    },
+    "max_records_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The collection may hold at most this many records. `0` means it must be empty. For a subcollection it applies to each parent record's instance."
+    },
+    "conflict_resolution": {
+      "$ref": "#/$defs/ConflictResolution"
+    },
+    "cache_control": {
       "type": "string",
-      "description": "The ID of the default view to use for this collection."
+      "description": "Optional HTTP Cache-Control directive string (RFC 9111) telling readers how long this collection's files may be cached. Overrides the database-level cache_control in .ingitdb/settings.yaml. A declared value may tighten the origin's header, and relax it only when the read is pinned to a commit SHA. Example: 'public, max-age=31536000, immutable'.",
+      "minLength": 1,
+      "examples": [
+        "public, max-age=31536000, immutable",
+        "no-store"
+      ]
     }
   },
   "additionalProperties": false,
@@ -53,7 +109,11 @@
       "type": "object",
       "title": "Record File Definition",
       "description": "Defines how records are stored in files — including the file naming pattern, serialization format, and whether the file contains a single record, a list, or a map.",
-      "required": ["name", "format", "type"],
+      "required": [
+        "name",
+        "format",
+        "type"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -68,9 +128,17 @@
         },
         "format": {
           "type": "string",
-          "description": "The serialization format of the record file (e.g. 'JSON', 'YAML').",
-          "minLength": 1,
-          "examples": ["JSON", "YAML"]
+          "description": "The serialization format of the record file. Lowercase.",
+          "enum": [
+            "yaml",
+            "yml",
+            "json",
+            "markdown",
+            "toml",
+            "ingr",
+            "csv",
+            "jsonl"
+          ]
         },
         "type": {
           "type": "string",
@@ -79,13 +147,38 @@
           "enum": [
             "map[string]any",
             "[]map[string]any",
-            "map[string]map[string]any"
+            "map[$record_id]map[$field_name]any"
           ],
           "x-enum-descriptions": {
             "map[string]any": "Single record per file — each record is stored as a key-value map in its own file.",
-            "[]map[string]any": "List of records — multiple records stored as an ordered array in a single file.",
-            "map[string]map[string]any": "Dictionary of records — multiple records stored as a keyed map in a single file."
+            "[]map[string]any": "List of records — multiple records stored as an ordered array in a single file. Required by the csv and jsonl formats.",
+            "map[$record_id]map[$field_name]any": "Dictionary of records — multiple records stored in a single file as a map keyed by record id."
           }
+        },
+        "records_dir": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Directory below the collection's data directory where record files live. `.` means the data directory itself. Defaults to `$records` when `name` contains `{key}`, else the data directory. Relative, forward slashes, must not go above the data directory.",
+          "examples": [
+            ".",
+            "$records",
+            "data"
+          ]
+        },
+        "exclude_regex": {
+          "type": "string",
+          "description": "Regular expression matched against file names; matching files are not records (not read, validated or counted)."
+        },
+        "content_field": {
+          "type": "string",
+          "description": "For the markdown format: the field that receives the Markdown body below the front matter."
+        },
+        "csv_cell_encoding": {
+          "type": "string",
+          "enum": [
+            "json-v1"
+          ],
+          "description": "Cell encoding for the csv format."
         }
       },
       "additionalProperties": false
@@ -93,13 +186,15 @@
     "ColumnDef": {
       "type": "object",
       "title": "Column Definition",
-      "description": "Defines the schema for a single column in a collection.",
-      "required": ["type"],
+      "description": "Defines the schema for a single column in a collection. The column named `$ID` describes the record key; when it is typed int, float, bool, date, time or datetime, every record key must parse as that type.",
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "type": "string",
           "title": "Column Type",
-          "description": "The data type of the column. Can be a primitive type, a localization map, or a generic map type like 'map[keyType]valueType'.",
+          "description": "The data type of the column: a scalar type, `map[locale]string`, a map type `map[keyType]valueType`, or a list type `[]elementType`.",
           "anyOf": [
             {
               "enum": [
@@ -117,7 +212,12 @@
             {
               "type": "string",
               "pattern": "^map\\[(locale|string|int|number|bool|date)\\].+$",
-              "description": "A map type with a supported key type. Format: 'map[keyType]valueType' where keyType is one of: locale, string, int, number, bool, date."
+              "description": "A map type with a supported key type. Format: 'map[keyType]valueType' where keyType is one of: locale, string, int, number, bool, date. The value type is not checked."
+            },
+            {
+              "type": "string",
+              "pattern": "^\\[\\](string|int|float|bool|date|time|datetime|any)$",
+              "description": "A list type. Every element must match the element type; `[]any` accepts any element but the value must be a list."
             }
           ]
         },
@@ -141,24 +241,135 @@
           "description": "Whether a value for this column is required. Defaults to false.",
           "default": false
         },
+        "required_when": {
+          "type": "string",
+          "description": "A Starlark expression over the record's stored sibling fields; the column is required when it evaluates to True. Cannot be combined with `required`."
+        },
         "length": {
           "type": "integer",
-          "description": "Exact required length for the column value.",
+          "description": "Exact required length: characters for a string, elements for a list, entries for a map.",
           "minimum": 0
         },
         "min_length": {
           "type": "integer",
-          "description": "Minimum length for the column value.",
+          "description": "Minimum length: characters for a string, elements for a list, entries for a map.",
           "minimum": 0
         },
         "max_length": {
           "type": "integer",
-          "description": "Maximum length for the column value.",
+          "description": "Maximum length: characters for a string, elements for a list, entries for a map.",
           "minimum": 0
+        },
+        "min_value": {
+          "type": "number",
+          "description": "Inclusive lower bound for a numeric column."
+        },
+        "max_value": {
+          "type": "number",
+          "description": "Inclusive upper bound for a numeric column."
+        },
+        "enum": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "The permitted values. Each member must be assignable to the column type."
         },
         "foreign_key": {
           "type": "string",
-          "description": "A reference to another collection, expressed as a dot-separated path (e.g. 'auth.users')."
+          "description": "The id of the root collection whose record keys this column's values must match (e.g. 'users' or 'auth.users'). A bare id is tried module-first: '<module of this collection>.<id>', then '<id>'. A list value is checked element by element."
+        },
+        "locale": {
+          "type": "string",
+          "description": "Pairs this column with the `map[locale]string` column named this column's name plus `s` (e.g. `title` with `titles`)."
+        },
+        "format": {
+          "type": "string",
+          "description": "Free-form hint about the logical content (e.g. markdown, html, json, uri, email). Not validated.",
+          "examples": [
+            "markdown",
+            "html",
+            "json",
+            "uri",
+            "email"
+          ]
+        },
+        "formula": {
+          "type": "string",
+          "description": "A Starlark expression that makes this a computed (virtual) column. Its value must not be stored."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ViewDef": {
+      "type": "object",
+      "title": "View Definition",
+      "description": "A view of the collection, as declared in a view file or inline as `default_view`.",
+      "properties": {
+        "titles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "order_by": {
+          "type": "string"
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "top": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "where": {
+          "type": "string"
+        },
+        "template": {
+          "type": "string"
+        },
+        "file_name": {
+          "type": "string"
+        },
+        "records_var_name": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "max_batch_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "include_hash": {
+          "type": "boolean"
+        },
+        "records_delimiter": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ConflictResolution": {
+      "type": "object",
+      "description": "Overrides the database-level conflict-resolution settings for this collection.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "same_record": {
+          "type": "boolean"
+        },
+        "record_merge": {
+          "type": "object"
         }
       },
       "additionalProperties": false

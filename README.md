@@ -91,7 +91,10 @@ Unknown keys are rejected by inGitDB, and by this schema.
 | `min_value`     | `number`            | No       | Inclusive lower bound of a numeric column.                                                                                                     |
 | `max_value`     | `number`            | No       | Inclusive upper bound of a numeric column.                                                                                                     |
 | `enum`          | `array`             | No       | Permitted values.                                                                                                                              |
-| `foreign_key`   | `string`            | No       | Root collection whose record keys the value must match (e.g. `users` or `auth.users`).                                                         |
+| `foreign_key`   | `string`            | No       | Root collection whose record keys the value must match (e.g. `users` or `auth.users`), or a subcollection path (`ext/commitius/cmSessions`, `spaces/$same/ext/$same/agreements`, `spaces/{spaceID}/ext/calendarius/happenings`). |
+| `columns`       | `map[string]ColumnDef` | No    | Fields of a nested object (on `any` or a map type).                                                                                           |
+| `values`        | `ColumnDef`         | No       | Shape of every value of a map column.                                                                                                          |
+| `items`         | `ColumnDef`         | No       | Shape of every element of a list column.                                                                                                       |
 | `locale`        | `string`            | No       | Pairs the column with its `map[locale]string` sibling.                                                                                         |
 | `format`        | `string`            | No       | Free-form content hint (markdown, html, uri, ...); not validated.                                                                              |
 | `formula`       | `string`            | No       | Starlark expression of a computed column (never stored).                                                                                       |

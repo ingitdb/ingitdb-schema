@@ -50,9 +50,9 @@ Unknown keys are rejected by inGitDB, and by this schema.
 | --------------------- | ---------------------- | -------- | --------------------------------------------------------------------------- |
 | `inherits`            | `string`               | No       | Path of a partial base definition to overlay under this one.                |
 | `titles`              | `map[string]string`    | No       | Localized collection titles keyed by locale code.                           |
-| `record_file`         | `RecordFileDef`        | **Yes**  | Defines file naming, format, and record storage type.                       |
+| `record_file`         | `RecordFileDef`        | **Yes**¹ | Defines file naming, format, and record storage type.                       |
 | `data_dir`            | `string`               | No       | Relative path to the data files directory.                                  |
-| `columns`             | `map[string]ColumnDef` | **Yes**  | Column definitions (at least one required).                                 |
+| `columns`             | `map[string]ColumnDef` | **Yes**¹ | Column definitions (at least one required).                                 |
 | `columns_order`       | `string[]`             | No       | Display order of columns (unique, no duplicates).                           |
 | `primary_key`         | `string[]`             | No       | Source primary key columns, written by importers.                           |
 | `source_schema`       | `object`               | No       | Relational schema of an imported collection, written by importers.          |
@@ -62,6 +62,8 @@ Unknown keys are rejected by inGitDB, and by this schema.
 | `max_records_count`   | `integer`              | No       | At most this many records (per parent record for a subcollection).          |
 | `conflict_resolution` | `object`               | No       | Per-collection conflict-resolution overrides.                               |
 | `cache_control`       | `string`               | No       | HTTP Cache-Control directive for this collection's files.                   |
+
+¹ Unless inherited through `inherits`. An `id` key is accepted and ignored: the id is the directory name.
 
 **`RecordFileDef`** — defines how records are stored:
 
@@ -99,8 +101,11 @@ Unknown keys are rejected by inGitDB, and by this schema.
 | `format`        | `string`            | No       | Free-form content hint (markdown, html, uri, ...); not validated.                                                                              |
 | `formula`       | `string`            | No       | Starlark expression of a computed column (never stored).                                                                                       |
 
-The column named `$ID` describes the record key. Typed `int`, `float`, `bool`, `date` (`YYYY-MM-DD`),
-`time` or `datetime` (RFC 3339), every record key must parse as that type.
+The column named `$ID` describes the record key. Typed `int` (no `+`, no leading zeros), `float`
+(shortest decimal form: `1.5`, not `1.50` or `1e+06`), `bool`, `date` (`YYYY-MM-DD`), `time`
+(`H:MM` or `H:MM:SS`, optional fractional seconds) or `datetime` (`YYYY-MM-DDTHH:MM:SS`, optional
+fractional seconds and zone; RFC 3339 is a subset), every record key must parse as that type. The
+JSON Schema cannot check this; `ingitdb validate` does. Ordinary temporal columns accept any text.
 
 ## Usage
 
@@ -112,15 +117,15 @@ Reference the schemas in your YAML files for IDE validation and autocompletion:
 
 ## Source of Truth
 
-These schemas are derived from the Go struct definitions in [`ingitdb-go/ingitdb/`](../../ingitdb-go/ingitdb/):
+These schemas are derived from the Go struct definitions in [`ingitdb-go/ingitdb/`](https://github.com/ingitdb/ingitdb-go/tree/main/ingitdb):
 
-- [`definition.go`](../../ingitdb-go/ingitdb/definition.go) — `Definition`
-- [`collection_def.go`](../../ingitdb-go/ingitdb/collection_def.go) — `CollectionDef`
-- [`record_file_def.go`](../../ingitdb-go/ingitdb/record_file_def.go) — `RecordFileDef`
-- [`column_def.go`](../../ingitdb-go/ingitdb/column_def.go) — `ColumnDef`
-- [`column_type.go`](../../ingitdb-go/ingitdb/column_type.go) — `ColumnType`
-- [`config/root_config.go`](../../ingitdb-go/ingitdb/config/root_config.go) — `Settings`, root collections
-- [`view_def.go`](../../ingitdb-go/ingitdb/view_def.go) — `ViewDef`
+- [`definition.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/definition.go) — `Definition`
+- [`collection_def.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/collection_def.go) — `CollectionDef`
+- [`record_file_def.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/record_file_def.go) — `RecordFileDef`
+- [`column_def.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/column_def.go) — `ColumnDef`
+- [`column_type.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/column_type.go) — `ColumnType`
+- [`config/root_config.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/config/root_config.go) — `Settings`, root collections
+- [`view_def.go`](https://github.com/ingitdb/ingitdb-go/blob/main/ingitdb/view_def.go) — `ViewDef`
 
 They are written by hand. When a field is added to one of these Go structs, add it here too:
 the reader rejects unknown keys, so a schema that lags the code rejects valid definitions.

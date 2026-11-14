@@ -4,11 +4,11 @@
   "title": "inGitDB Collection Definition",
   "description": "Schema for a collection definition file, `.collection/definition.yaml` inside a collection directory (or `.collections/<name>/definition.yaml` in the shared layout). A subcollection uses the same format at `.collection/subcollections/<sub>/definition.yaml`. Unknown keys are rejected by inGitDB, so this schema does not allow additional properties.",
   "type": "object",
-  "required": [
-    "columns",
-    "record_file"
-  ],
   "properties": {
+    "id": {
+      "type": "string",
+      "description": "Ignored: the collection id is taken from its directory name. Accepted because inGitDB accepts it."
+    },
     "inherits": {
       "type": "string",
       "description": "Path of a partial base definition to overlay under this one, relative to the directory of this file. Columns merge by name (this definition wins); other fields fill in where this one leaves them unset."
@@ -211,7 +211,7 @@
             },
             {
               "type": "string",
-              "pattern": "^map\\[(locale|string|int|number|bool|date)\\].+$",
+              "pattern": "^map\\[(locale|string|int|number|bool|date)\\].*$",
               "description": "A map type with a supported key type. Format: 'map[keyType]valueType' where keyType is one of: locale, string, int, number, bool, date. The value type is not checked."
             },
             {
@@ -423,5 +423,19 @@
         }
       ]
     }
-  }
+  },
+  "if": {
+    "not": {
+      "required": [
+        "inherits"
+      ]
+    }
+  },
+  "then": {
+    "required": [
+      "columns",
+      "record_file"
+    ]
+  },
+  "$comment": "columns and record_file are required unless the definition inherits them (inherits)."
 }

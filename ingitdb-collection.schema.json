@@ -194,7 +194,7 @@
     "ColumnDef": {
       "type": "object",
       "title": "Column Definition",
-      "description": "Defines the schema for a single column in a collection. The column named `$ID` describes the record key; when it is typed int, float, bool, date, time or datetime, every record key must parse as that type.",
+      "description": "Defines the schema for a single column in a collection. The column named `$ID` describes the record key; when it is typed int (no + or leading zeros), float (shortest decimal form: 1.5, not 1.50 or 1e+06), bool, date (YYYY-MM-DD), time (H:MM or H:MM:SS, optional fractional seconds) or datetime (YYYY-MM-DDTHH:MM:SS, optional fractional seconds and zone), every record key must parse as that type. This schema cannot check that; `ingitdb validate` does.",
       "required": [
         "type"
       ],
@@ -284,7 +284,7 @@
         },
         "foreign_key": {
           "type": "string",
-          "description": "The id of the root collection whose record keys this column's values must match (e.g. 'users' or 'auth.users'). A bare id is tried module-first: '<module of this collection>.<id>', then '<id>'. A list value is checked element by element."
+          "description": "The id of the root collection whose record keys this column's values must match (e.g. 'users' or 'auth.users'). A bare id is tried module-first: '<module of this collection>.<id>', then '<id>'. A list value is checked element by element. It may instead name a subcollection by path, alternating collection ids and parent keys (e.g. 'ext/commitius/cmSessions'); a parent key is a literal, '$same' (the referring record's own key at that level) or '{field}' (a field of the referring record)."
         },
         "locale": {
           "type": "string",
@@ -304,9 +304,126 @@
         "formula": {
           "type": "string",
           "description": "A Starlark expression that makes this a computed (virtual) column. Its value must not be stored."
+        },
+        "columns": {
+          "description": "The fields of a nested object: only on `any` (where only object values are checked) or a map type other than map[locale]string. Undeclared keys in the object are findings. null is the same as leaving it out.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/NestedColumnDef"
+              }
+            }
+          ]
+        },
+        "values": {
+          "description": "The shape of every value of a map column other than map[locale]string. Its type must be the map's value type, written the same way (map[string]float takes values of type float, not int). null is the same as leaving it out.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/NestedColumnDef"
+            }
+          ]
+        },
+        "items": {
+          "description": "The shape of every element of a list column ([]T). Its type must be the element type T. null is the same as leaving it out.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/NestedColumnDef"
+            }
+          ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "columns"
+            ],
+            "properties": {
+              "columns": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "anyOf": [
+                  {
+                    "const": "any"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^map\\[",
+                    "not": {
+                      "const": "map[locale]string"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "values"
+            ],
+            "properties": {
+              "values": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "pattern": "^map\\[",
+                "not": {
+                  "const": "map[locale]string"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "items"
+            ],
+            "properties": {
+              "items": {
+                "not": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "type": "string",
+                "pattern": "^\\[\\]"
+              }
+            }
+          }
+        }
+      ]
     },
     "ViewDef": {
       "type": "object",
@@ -381,6 +498,40 @@
         }
       },
       "additionalProperties": false
+    },
+    "NestedColumnDef": {
+      "description": "A column definition inside columns, values or items: formula, required_when, foreign_key and locale are top-level only.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ColumnDef"
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "formula"
+                ]
+              },
+              {
+                "required": [
+                  "required_when"
+                ]
+              },
+              {
+                "required": [
+                  "foreign_key"
+                ]
+              },
+              {
+                "required": [
+                  "locale"
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   },
   "if": {

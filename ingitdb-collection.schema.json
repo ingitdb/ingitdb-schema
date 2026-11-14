@@ -358,7 +358,10 @@
                   },
                   {
                     "type": "string",
-                    "pattern": "^map\\[(string|int|number|bool|date)\\].*$"
+                    "pattern": "^map\\[",
+                    "not": {
+                      "const": "map[locale]string"
+                    }
                   }
                 ]
               }
@@ -382,7 +385,10 @@
             "properties": {
               "type": {
                 "type": "string",
-                "pattern": "^map\\[(string|int|number|bool|date)\\].*$"
+                "pattern": "^map\\[",
+                "not": {
+                  "const": "map[locale]string"
+                }
               }
             }
           }

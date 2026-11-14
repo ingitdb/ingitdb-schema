@@ -299,18 +299,17 @@
         },
         "columns": {
           "type": "object",
-          "minProperties": 1,
           "additionalProperties": {
-            "$ref": "#/$defs/ColumnDef"
+            "$ref": "#/$defs/NestedColumnDef"
           },
           "description": "The fields of a nested object (on 'any' or a map type other than map[locale]string). Undeclared keys in the object are findings."
         },
         "values": {
-          "$ref": "#/$defs/ColumnDef",
+          "$ref": "#/$defs/NestedColumnDef",
           "description": "The shape of every value of a map column."
         },
         "items": {
-          "$ref": "#/$defs/ColumnDef",
+          "$ref": "#/$defs/NestedColumnDef",
           "description": "The shape of every element of a list column."
         }
       },
@@ -389,6 +388,40 @@
         }
       },
       "additionalProperties": false
+    },
+    "NestedColumnDef": {
+      "description": "A column definition inside columns, values or items: formula, required_when, foreign_key and locale are top-level only.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ColumnDef"
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "formula"
+                ]
+              },
+              {
+                "required": [
+                  "required_when"
+                ]
+              },
+              {
+                "required": [
+                  "foreign_key"
+                ]
+              },
+              {
+                "required": [
+                  "locale"
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   }
 }

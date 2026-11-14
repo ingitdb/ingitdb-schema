@@ -94,12 +94,14 @@ Unknown keys are rejected by inGitDB, and by this schema.
 | `max_value`     | `number`            | No       | Inclusive upper bound of a numeric column.                                                                                                     |
 | `enum`          | `array`             | No       | Permitted values.                                                                                                                              |
 | `foreign_key`   | `string`            | No       | Root collection whose record keys the value must match (e.g. `users` or `auth.users`), or a subcollection path (`ext/commitius/cmSessions`, `spaces/$same/ext/$same/agreements`, `spaces/{spaceID}/ext/calendarius/happenings`). |
-| `columns`       | `map[string]ColumnDef` | No    | Fields of a nested object (on `any` or a map type).                                                                                           |
-| `values`        | `ColumnDef`         | No       | Shape of every value of a map column.                                                                                                          |
-| `items`         | `ColumnDef`         | No       | Shape of every element of a list column.                                                                                                       |
+| `columns`       | `map[string]ColumnDef` | No    | Fields of a nested object; only on `any` (object values only) or a map type other than `map[locale]string`.                                    |
+| `values`        | `ColumnDef`         | No       | Shape of every value of a map column (not `map[locale]string`); its `type` is the map's value type, written the same way.                     |
+| `items`         | `ColumnDef`         | No       | Shape of every element of a list column (`[]T`); its `type` is `T`.                                                                            |
 | `locale`        | `string`            | No       | Pairs the column with its `map[locale]string` sibling.                                                                                         |
 | `format`        | `string`            | No       | Free-form content hint (markdown, html, uri, ...); not validated.                                                                              |
 | `formula`       | `string`            | No       | Starlark expression of a computed column (never stored).                                                                                       |
+
+`null` for `columns`, `values` or `items` is the same as leaving it out. A definition that uses any of the three needs an ingitdb-go release that has them; older readers refuse the whole database (definitions are decoded strictly), so every consumer upgrades first.
 
 The column named `$ID` describes the record key. Typed `int` (no `+`, no leading zeros), `float`
 (shortest decimal form: `1.5`, not `1.50` or `1e+06`), `bool`, `date` (`YYYY-MM-DD`), `time`
